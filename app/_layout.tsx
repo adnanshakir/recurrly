@@ -1,7 +1,50 @@
-import { SplashScreen, Stack } from "expo-router";
+import React, { useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import "@/global.css";
 import { useFonts } from "expo-font";
-import { useEffect } from "react";
+import { ClerkProvider, useAuth } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+if (!publishableKey) {
+  throw new Error("Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in .env");
+}
+
+function InitialLayout() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (isSignedIn && inAuthGroup) {
+      router.replace("/(tabs)");
+    } else if (!isSignedIn && !inAuthGroup && segments[0] !== undefined) {
+      // Don't interrupt initial index route resolution
+      if (segments.length > 0) {
+        router.replace("/(auth)/sign-in");
+      }
+    }
+  }, [isLoaded, isSignedIn, segments]);
+
+  if (!isLoaded) {
+    return (
+      <View
+        className="flex-1 items-center justify-center bg-background"
+        style={{ flex: 1, backgroundColor: "#fff9e3" }}
+      >
+        <ActivityIndicator size="large" color="#ea7a53" />
+      </View>
+    );
+  }
+
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -17,9 +60,22 @@ export default function RootLayout() {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
-  },[fontsLoaded]);
+  }, [fontsLoaded]);
 
-  if(!fontsLoaded) return null;
+  if (!fontsLoaded) {
+    return (
+      <View
+        className="flex-1 items-center justify-center bg-background"
+        style={{ flex: 1, backgroundColor: "#fff9e3" }}
+      >
+        <ActivityIndicator size="large" color="#ea7a53" />
+      </View>
+    );
+  }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <InitialLayout />
+    </ClerkProvider>
+  );
 }

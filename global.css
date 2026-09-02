@@ -251,11 +251,11 @@
     }
 
     .auth-logo-mark {
-        @apply relative size-14 items-center justify-center rounded-2xl bg-accent;
+        @apply relative size-14 items-center justify-center rounded-bl-2xl rounded-tr-2xl bg-accent;
     }
 
     .auth-logo-mark-text {
-        @apply text-2xl font-sans-extrabold text-background;
+        @apply text-4xl font-sans-extrabold text-background;
     }
 
     .auth-wordmark {
